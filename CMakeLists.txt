@@ -20,9 +20,9 @@ include(ECMSetupVersion)
 include(ECMGeneratePriFile)
 include(CMakeDependentOption)
 
-option(BUILD_WITH_QT6 "Build qtkeychain with Qt 6" OFF)
+option(BUILD_WITH_QT6 "Build qtkeychain with Qt 6" ON)
 option(BUILD_TEST_APPLICATION "Build test application" OFF)
-option(BUILD_TRANSLATIONS "Build translations" ON)
+option(BUILD_TRANSLATIONS "Build translations" OFF)
 option(BUILD_SHARED_LIBS "Build dynamic library" ON)
 if(QTKEYCHAIN_STATIC)
     set(BUILD_SHARED_LIBS OFF)
@@ -47,50 +47,7 @@ if (WIN32)
     endif()
 endif()
 
-if( NOT BUILD_WITH_QT6 )
-    find_package(Qt5 COMPONENTS Core REQUIRED)
-endif()
 
-if (Qt5Core_FOUND AND NOT BUILD_WITH_QT6)
-  set(QTKEYCHAIN_VERSION_INFIX 5)
-
-  if(ANDROID)
-    if(Qt5Core_VERSION VERSION_LESS 5.7)
-        find_package(Qt5 COMPONENTS Core REQUIRED Private)
-        include_directories(${Qt5Core_PRIVATE_INCLUDE_DIRS})
-    endif()
-
-    find_package(Qt5 COMPONENTS AndroidExtras REQUIRED)
-    include_directories(${Qt5AndroidExtras_INCLUDE_DIRS})
-    set(QTANDROIDEXTRAS_LIBRARIES ${Qt5AndroidExtras_LIBRARIES})
-  endif()
-
-  if(UNIX AND NOT APPLE AND NOT ANDROID AND NOT HAIKU)
-    find_package(Qt5 COMPONENTS DBus REQUIRED)
-    include_directories(${Qt5DBus_INCLUDE_DIRS})
-    set(QTDBUS_LIBRARIES ${Qt5DBus_LIBRARIES})
-    macro(qt_add_dbus_interface)
-      qt5_add_dbus_interface(${ARGN})
-    endmacro()
-  endif()
-
-  if(BUILD_TRANSLATIONS)
-    find_package(Qt5 COMPONENTS LinguistTools REQUIRED)
-    macro(qt_add_translation)
-      qt5_add_translation(${ARGN})
-    endmacro(qt_add_translation)
-    macro(qt_create_translation)
-      qt5_create_translation(${ARGN})
-    endmacro(qt_create_translation)
-  endif()
-
-  macro(qt_wrap_cpp)
-    qt5_wrap_cpp(${ARGN})
-  endmacro()
-
-  set(QTCORE_LIBRARIES ${Qt5Core_LIBRARIES})
-  include_directories(${Qt5Core_INCLUDE_DIRS})
-else()
   find_package(Qt6 COMPONENTS Core REQUIRED)
   set(QTKEYCHAIN_VERSION_INFIX 6)
 
@@ -119,7 +76,7 @@ else()
   endmacro()
 
   set(QTCORE_LIBRARIES ${Qt6Core_LIBRARIES})
-endif()
+
 
 set(QTKEYCHAIN_TARGET_NAME qt${QTKEYCHAIN_VERSION_INFIX}keychain)
 
@@ -173,14 +130,9 @@ if(BUILD_TEST_APPLICATION)
     if(APPLE)
         list(APPEND testclient_LIBRARIES "-framework Cocoa")
 
-        if (BUILD_WITH_QT6)
             find_package(Qt6 COMPONENTS Gui REQUIRED)
             list(APPEND testclient_LIBRARIES Qt6::Gui)
-        else()
-            find_package(Qt5 COMPONENTS Gui REQUIRED)
-            list(APPEND testclient_LIBRARIES Qt5::Gui)
-        endif()
-
+   
     endif()
     add_executable( testclient testclient.cpp )
     target_link_libraries( testclient ${testclient_LIBRARIES})
