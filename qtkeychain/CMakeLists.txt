@@ -6,7 +6,7 @@ set(qtkeychain_SOURCES
     keychain.h
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(MSVC)
     # CMake < 3.15 sneaks in /W# flags for us, so we need a replacement,
     # or we'll get a warning (cf. CMP0092)
     if (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -21,13 +21,21 @@ endif()
 
 if(WIN32)
     list(APPEND qtkeychain_SOURCES keychain_win.cpp)
+    list(APPEND qtkeychain_LIBRARIES crypt32)
     if (NOT USE_CREDENTIAL_STORE)
-        list(APPEND qtkeychain_LIBRARIES crypt32)
         list(APPEND qtkeychain_SOURCES plaintextstore.cpp)
     endif()
     #FIXME: mingw bug; otherwise getting undefined refs to RtlSecureZeroMemory there
     if(MINGW)
         add_definitions( -O2 )
+    endif()
+
+    set(CMAKE_CXX_STANDARD 17)
+    add_definitions(-DUNICODE)
+    if (MSVC)
+        add_definitions(/utf-8)
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        add_definitions(-finput-charset=UTF-8 -fexec-charset=UTF-8)
     endif()
 endif()
 
@@ -66,14 +74,6 @@ if(ANDROID)
 endif()
 
 QT_WRAP_CPP(qtkeychain_MOC_OUTFILES keychain.h keychain_p.h gnomekeyring_p.h)
-
-set(qtkeychain_TR_FILES
-      translations/qtkeychain_de.ts
-      translations/qtkeychain_fr.ts
-      translations/qtkeychain_ro.ts
-      translations/qtkeychain_ru.ts
-      translations/qtkeychain_zh.ts
-)
 
 add_library(${QTKEYCHAIN_TARGET_NAME} ${qtkeychain_SOURCES} ${qtkeychain_MOC_OUTFILES} ${qtkeychain_QM_FILES})
 if(WIN32)
